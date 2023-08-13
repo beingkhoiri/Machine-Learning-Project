@@ -1,0 +1,44 @@
+# =============================================================================
+# Build a classifier for the Fashion MNIST dataset.
+# Expected to classify 10 classes.
+# The input shape should be 28x28 monochrome.
+# Input layer should accept (28, 28) as the input shape.
+# Desired accuracy AND validation_accuracy > 83%
+# =============================================================================
+
+import tensorflow as tf
+
+
+def solution_B2():
+    fashion_mnist = tf.keras.datasets.fashion_mnist
+    (training_images, training_labels), (test_images, test_labels) = fashion_mnist.load_data()
+
+    # Data Pre-Processing
+    training_images = training_images/255.0
+    test_images = test_images/255.0
+
+    # Reshape the images to have a single color channel
+    training_images = training_images.reshape(-1, 28, 28, 1)
+    test_images = test_images.reshape(-1, 28, 28, 1)
+
+    model = tf.keras.Sequential([
+        tf.keras.layers.Conv2D(16, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(512, activation='relu'),
+        tf.keras.layers.Dense(1024, activation='relu'),
+        tf.keras.layers.Dense(10, activation='softmax')
+    ])
+
+    model.compile(
+        optimizer='adam',
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    model.fit(
+        training_images, training_labels,
+        validation_data=(test_images, test_labels),
+        epochs=5
+    )
+
+    return model
