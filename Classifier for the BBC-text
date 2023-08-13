@@ -1,0 +1,102 @@
+# ===================================================================================================
+# Build and train a classifier for the BBC-text dataset.
+# This is a multiclass classification problem.
+# The dataset used is originally published in: http://mlg.ucd.ie/datasets/bbc.html.
+# Desired accuracy and validation_accuracy > 91%
+# ===================================================================================================
+
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+import tensorflow as tf
+import pandas as pd
+
+
+def solution_B4():
+    bbc = pd.read_csv('https://github.com/dicodingacademy/assets/raw/main/Simulation/machine_learning/bbc-text.csv')
+
+    vocab_size = 1000
+    embedding_dim = 16
+    max_length = 120
+    trunc_type='post'
+    padding_type='post'
+    oov_tok = "<OOV>"
+    training_portion = .8
+
+    # YOUR CODE HERE
+    sentences = []
+    labels = []
+
+
+    for index, row in bbc.iterrows():
+        labels.append(row['category'])
+        sentence = row['text']
+        sentences.append(sentence)
+
+    training_size = int(len(sentences)*training_portion)
+
+    training_sentences = sentences[0:training_size]
+    validation_sentences = sentences[training_size:]
+    training_labels = labels[0:training_size]
+    validation_labels = labels[training_size:]
+
+    print(len(training_sentences))
+    print(len(validation_sentences))
+    print(len(training_labels))
+    print(len(validation_labels))
+    print(training_sentences[0:5])
+    print(validation_labels[0:5])
+
+    tokenizer = Tokenizer(
+        num_words=vocab_size,
+        oov_token=oov_tok
+    )
+
+    tokenizer.fit_on_texts(training_sentences)
+    word_index = tokenizer.word_index
+
+    training_sequences = tokenizer.texts_to_sequences(training_sentences)
+    training_padded = pad_sequences(
+        training_sequences,
+        maxlen=max_length,
+        padding=padding_type,
+        truncating=trunc_type
+    )
+
+    validation_sequences = tokenizer.texts_to_sequences(validation_sentences)
+    validation_padded = pad_sequences(
+        validation_sequences,
+        maxlen=max_length,
+        padding=padding_type,
+        truncating=trunc_type
+    )
+    import numpy as np
+
+    label_tokenizer = Tokenizer()
+    label_tokenizer.fit_on_texts(labels)
+
+    training_labels = np.array(label_tokenizer.texts_to_sequences(training_labels))
+    validation_labels = np.array(label_tokenizer.texts_to_sequences(validation_labels))
+
+
+    model = tf.keras.Sequential([
+        # YOUR CODE HERE.
+        tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length=max_length),
+        tf.keras.layers.GlobalAveragePooling1D(),
+        tf.keras.layers.Dense(30, activation='relu'),
+        tf.keras.layers.Dense(6, activation='softmax')
+    ])
+
+    model.compile(
+        optimizer='adam',
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy'])
+
+    model.fit(
+        training_padded,
+        training_labels,
+        validation_data=(validation_padded, validation_labels),
+        epochs=30
+    )
+
+    return model
